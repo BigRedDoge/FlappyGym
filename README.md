@@ -1,1 +1,1 @@
-# IntelliFlap: OpenAI Gym environment for reinforcement learning training
+# FlappyGym: A Flappy Bird OpenAI Gym environment for reinforcement learning 
