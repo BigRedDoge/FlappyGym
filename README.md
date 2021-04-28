@@ -1,1 +1,2 @@
-# FlappyGym: A Flappy Bird OpenAI Gym environment for reinforcement learning 
+# FlappyGym: 
+A Flappy Bird OpenAI Gym environment for reinforcement learning 

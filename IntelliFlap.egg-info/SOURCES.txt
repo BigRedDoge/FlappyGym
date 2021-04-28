@@ -1,0 +1,7 @@
+README.md
+setup.py
+IntelliFlap.egg-info/PKG-INFO
+IntelliFlap.egg-info/SOURCES.txt
+IntelliFlap.egg-info/dependency_links.txt
+IntelliFlap.egg-info/requires.txt
+IntelliFlap.egg-info/top_level.txt
