@@ -247,7 +247,9 @@ class FlappyBird():
             info['score'] = self.game_state['score']
             info['reward'] = reward
             info['dead'] = True
-            return self.game_state, reward, info
+            if self.image_obs:
+                return self.image_observation(), reward, info
+            return self.game_state(), reward, info
 
         # check for score
         playerMidPos = self.game_state['playerx'] + self.IMAGES['player'][0].get_width() / 2
