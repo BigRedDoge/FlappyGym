@@ -14,7 +14,7 @@ except NameError:
     xrange = range
 
 
-class FlappyBird():
+class FlappyBird(object):
 
     def __init__(self, width, height):
         self.FPS = 30
@@ -242,9 +242,9 @@ class FlappyBird():
         self.game_state['upperPipes'], self.game_state['lowerPipes'])
 
         if crashTest[0]:
-            reward -= 5
+            reward -= 1
             self.showGameOverScreen()
-            info['score'] = self.game_state['score']
+            info['score'] = self.score
             info['reward'] = reward
             info['dead'] = True
             if self.image_obs:
@@ -256,8 +256,8 @@ class FlappyBird():
         for pipe in self.game_state['upperPipes']:
             pipeMidPos = pipe['x'] + self.IMAGES['pipe'][0].get_width() / 2
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
-                self.game_state['score'] += 1
-                reward += 10 * self.game_state['score']
+                self.score += 1
+                reward += 4 #25 * self.game_state['score']
                 if self.render and self.sound:
                     self.SOUNDS['point'].play()
 
@@ -293,20 +293,30 @@ class FlappyBird():
         if len(self.game_state['upperPipes']) > 0 and 0 < self.game_state['upperPipes'][0]['x'] < 5:
             newPipe = self.getRandomPipe()
             self.game_state['upperPipes'].append(newPipe[0])
-            observself.game_stateation['lowerPipes'].append(newPipe[1])
+            self.game_state['lowerPipes'].append(newPipe[1])
 
         # remove first pipe if its out of the screen
         if len(self.game_state['upperPipes']) > 0 and self.game_state['upperPipes'][0]['x'] < -self.IMAGES['pipe'][0].get_width():
             self.game_state['upperPipes'].pop(0)
             self.game_state['lowerPipes'].pop(0)
 
-        if (self.SCREENHEIGHT + self.game_state['upperPipes'][0]['y']) - self.game_state['playery'] > 0:
-            dist_pipes = 50 / ((self.SCREENHEIGHT + self.game_state['upperPipes'][0]['y']) - self.game_state['playery'])
-            dist_pipes *= 2 / (self.game_state['upperPipes'][0]['x'] / self.game_state['upperPipes'][0]['y'])
-        else:
-            dist_pipes = 2 / (self.game_state['upperPipes'][0]['x'] / self.game_state['upperPipes'][0]['y'])
-        reward += -2 * dist_pipes
-
+        #if self.game_state['upperPipes'][0]['x'] * self.game_state['upperPipes'][0]['y'] > 0:
+        #dist_pipes = 50 / ((self.SCREENHEIGHT + self.game_state['upperPipes'][0]['y']) - self.game_state['playery'])
+        #print("playery", self.game_state['playery'])
+        
+        if self.game_state['upperPipes'][0]['x'] > self.game_state['playerx']:
+            dist = 0.75 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][0]['x'] + self.game_state['lowerPipes'][0]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][0]['y'] + self.game_state['lowerPipes'][0]['y']) - self.game_state['playery'])**2))**2))
+            dist += 0.25 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][1]['x'] + self.game_state['lowerPipes'][1]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][1]['y'] + self.game_state['lowerPipes'][1]['y']) - self.game_state['playery'])**2))**2))
+        else: 
+            dist = 2 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][1]['x'] + self.game_state['lowerPipes'][1]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][1]['y'] + self.game_state['lowerPipes'][1]['y']) - self.game_state['playery'])**2))**2))
+            #print("pipe behind", reward)
+        if dist > 1: 
+            dist == 1
+        reward += dist
+        #print(reward)
+        #    dist_pipes = 10
+        #reward += -2 * dist_pipes
+        
         if self.render:
             # draw sprites
             self.SCREEN.blit(self.IMAGES['background'], (0,0))
@@ -317,7 +327,7 @@ class FlappyBird():
 
             self.SCREEN.blit(self.IMAGES['base'], (self.game_state['basex'], self.BASEY))
             # print score so player overlaps the score
-            self.showScore(self.game_state['score'])
+            self.showScore(self.score)
 
         # Player rotation has a threshold
         visibleRot = self.playerRotThr
@@ -331,9 +341,11 @@ class FlappyBird():
             
         self.FPSCLOCK.tick(self.FPS)
 
-        info['score'] = self.game_state['score']
+        info['score'] = self.score
         info['reward'] = reward
         info['dead'] = False
+
+        pygame.event.pump()
 
         if self.image_obs:
             return self.image_observation(), reward, info
@@ -345,7 +357,7 @@ class FlappyBird():
 
     def showGameOverScreen(self):
         """crashes the player down ans shows gameover image"""
-        score = self.game_state['score']
+        score = self.score
         playerx = self.SCREENWIDTH * 0.2
         playery = self.game_state['playery']
         playerHeight = self.IMAGES['player'][0].get_height()
@@ -513,3 +525,14 @@ class FlappyBird():
 
     def image_observation(self):
         return pygame.surfarray.array3d(self.SCREEN) #/ 255.0
+
+    def __getstate__(self):
+        data = self.__dict__
+        del data['SCREEN']
+        del data['FPSCLOCK']
+        del data['IMAGES']
+        del data['SOUNDS']
+        del data['HITMASKS']
+        print([type(attr) for attr in data.values()])
+        return data
+
