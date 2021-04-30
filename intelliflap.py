@@ -1,20 +1,21 @@
-import gym
-from collections import defaultdict
-import numpy as np
-import statistics
-import IntelliFlap
-from IntelliFlap.envs.flap_env import FlapEnv
-from IntelliFlap.envs.cnn_flap_env import CnnFlapEnv
-from stable_baselines3.common.env_checker import check_env
-from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
-from stable_baselines3 import HER, DDPG, DQN, SAC, TD3, PPO, A2C
-from stable_baselines3.ppo import CnnPolicy
 import random
+import statistics
+from collections import defaultdict
+
+import gym
+import numpy as np
 import torch
 import torch.nn as nn
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
+from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+from stable_baselines3.ppo import CnnPolicy
+
+import IntelliFlap
+from custom_arch import CustomActorCriticPolicy, CustomCNN
+from IntelliFlap.envs.cnn_flap_env import CnnFlapEnv
+from IntelliFlap.envs.flap_env import FlapEnv
 
 
 def main():
@@ -31,18 +32,22 @@ def main():
     policy_kwargs = dict(
         features_extractor_class=CustomCNN,
         features_extractor_kwargs=dict(features_dim=256),
-        activation_fn=nn.LeakyReLU,
-        net_arch=[128, dict(pi=[32], vf=[32])]
     )
+    #eval_callback = EvalCallback(env[0], best_model_save_path='./saved_models/',
+    #                         eval_freq=100000, deterministic=True, render=False)
     #model = DQN('CnnPolicy', env, verbose=1, buffer_size=35000, learning_starts=1000, policy_kwargs=policy_kwargs)
-    #model = A2C('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs)
-    model = PPO('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs)
+    #model = PPO('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs)
     #model = DQN.load("flappy_dqn3", env)
-    model.learn(total_timesteps=500000)
-    model.save("flappy_ppo1")
+    
+   # model = A2C(CustomActorCriticPolicy, env, verbose=1, policy_kwargs=policy_kwargs, tensorboard_log="./logs/")
+    #model = PPO(CustomActorCriticPolicy, env, verbose=1, n_steps=512, policy_kwargs=policy_kwargs, tensorboard_log="./logs/", batch_size=32)
+    #model.load("saved_models/flappy_a2c_custom2mil")
+    #model.learn(total_timesteps=1000000)
+    #model.save("saved_models/flappy_a2c_custom2_1mil")
 
     env = DummyVecEnv([CnnFlapEnv])
-    model = PPO.load("flappy_ppo1", env)
+    #model = PPO('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs, tensorboard_log="./logs/progress_tensorboard/")
+    model = A2C.load("saved_models/flappy_a2c_custom2_1mil", env)
 
     obs = env.reset()
     env.render()
@@ -56,7 +61,7 @@ def main():
     for step in range(n_steps):
         action, _ = model.predict(obs)
         obs_next, reward, done, info = env.step(action)
-        print("Reward: ", reward[0])
+        #print("Reward: ", reward[0])
         if done:
             rewards.append(reward[0])
             scores.append(info[0]['score'])
@@ -80,36 +85,6 @@ def make_env(env_id, rank, seed=0):
         return env
     #set_random_seed(seed)
     return _init
-
-
-class CustomCNN(BaseFeaturesExtractor):
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
-        super(CustomCNN, self).__init__(observation_space, features_dim)
-        # We assume CxHxW images (channels first)
-        # Re-ordering will be done by pre-preprocessing or wrapper
-        n_input_channels = observation_space.shape[0]
-        self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4, padding=0),
-            nn.MaxPool2d(3, stride=2),
-            nn.LeakyReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=0),
-            nn.MaxPool2d(3, stride=2),
-            nn.LeakyReLU(),
-            nn.Flatten(),
-        )
-
-        # Compute shape by doing one forward pass
-        with torch.no_grad():
-            n_flatten = self.cnn(
-                torch.as_tensor(observation_space.sample()[None]).float()
-            ).shape[1]
-
-        self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.LeakyReLU())
-
-    def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        return self.linear(self.cnn(observations))
-
-
 
 
 if __name__ == "__main__":

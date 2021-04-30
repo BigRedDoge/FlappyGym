@@ -257,7 +257,7 @@ class FlappyBird(object):
             pipeMidPos = pipe['x'] + self.IMAGES['pipe'][0].get_width() / 2
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                 self.score += 1
-                reward += 4 #25 * self.game_state['score']
+                reward += 2 #+ self.score #25 * self.game_state['score']
                 if self.render and self.sound:
                     self.SOUNDS['point'].play()
 
@@ -312,7 +312,7 @@ class FlappyBird(object):
             #print("pipe behind", reward)
         if dist > 1: 
             dist == 1
-        reward += dist
+        #reward += dist
         #print(reward)
         #    dist_pipes = 10
         #reward += -2 * dist_pipes
