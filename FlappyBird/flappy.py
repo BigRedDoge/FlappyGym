@@ -26,7 +26,7 @@ class FlappyBird(object):
         self.IMAGES, self.SOUNDS, self.HITMASKS = {}, {}, {}
         self.render = False
         self.sound = False
-        self.image_obs = True
+        self.image_obs = False
         
         # list of all possible players (tuple of 3 positions of flap)
         PLAYERS_LIST = (
@@ -222,13 +222,13 @@ class FlappyBird(object):
         if self.image_obs:
             return self.image_observation()
         else:
-            return self.observation
+            return self.game_state
 
 
     def game_step(self, action):
         reward = 0
         info = {}
-        if action == 1:
+        if action >= 1:
             #reward -= 0.25
             if self.game_state['playery'] > -2 * self.IMAGES['player'][0].get_height():
                 self.game_state['playerVelY'] = self.playerFlapAcc
@@ -242,14 +242,17 @@ class FlappyBird(object):
         self.game_state['upperPipes'], self.game_state['lowerPipes'])
 
         if crashTest[0]:
-            reward -= 1
+            penalty = 5 - self.score if self.score < 5 else 1
+            reward -= penalty #abs(-1.0 * math.log((self.score + 1), 1.08) + 30) + 5
+            #print(reward)
             self.showGameOverScreen()
             info['score'] = self.score
             info['reward'] = reward
             info['dead'] = True
+            self.game_state['dead'] = True
             if self.image_obs:
                 return self.image_observation(), reward, info
-            return self.game_state(), reward, info
+            return self.game_state, reward, info
 
         # check for score
         playerMidPos = self.game_state['playerx'] + self.IMAGES['player'][0].get_width() / 2
@@ -257,7 +260,7 @@ class FlappyBird(object):
             pipeMidPos = pipe['x'] + self.IMAGES['pipe'][0].get_width() / 2
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                 self.score += 1
-                reward += 2 #+ self.score #25 * self.game_state['score']
+                reward += 5 * self.score  #25 * self.game_state['score']
                 if self.render and self.sound:
                     self.SOUNDS['point'].play()
 
@@ -305,10 +308,11 @@ class FlappyBird(object):
         #print("playery", self.game_state['playery'])
         
         if self.game_state['upperPipes'][0]['x'] > self.game_state['playerx']:
-            dist = 0.75 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][0]['x'] + self.game_state['lowerPipes'][0]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][0]['y'] + self.game_state['lowerPipes'][0]['y']) - self.game_state['playery'])**2))**2))
-            dist += 0.25 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][1]['x'] + self.game_state['lowerPipes'][1]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][1]['y'] + self.game_state['lowerPipes'][1]['y']) - self.game_state['playery'])**2))**2))
+            dist = 2 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][0]['x'] + self.game_state['lowerPipes'][0]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][0]['y'] + self.game_state['lowerPipes'][0]['y']) - self.game_state['playery'])**2))**2))
+            dist += 1* (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][1]['x'] + self.game_state['lowerPipes'][1]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][1]['y'] + self.game_state['lowerPipes'][1]['y']) - self.game_state['playery'])**2))**2))
         else: 
             dist = 2 * (100000 / ((50 + math.sqrt(((self.game_state['upperPipes'][1]['x'] + self.game_state['lowerPipes'][1]['x']) - self.game_state['playerx'])**2 + ((self.game_state['upperPipes'][1]['y'] + self.game_state['lowerPipes'][1]['y']) - self.game_state['playery'])**2))**2))
+            #print("2nd pipe dist", dist)
             #print("pipe behind", reward)
         if dist > 1: 
             dist == 1
