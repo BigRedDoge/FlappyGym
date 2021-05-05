@@ -17,11 +17,13 @@ class CnnFlapEnv(gym.Env):
         height = 512
         self.rgb = True
         self.high_score = 0
-        self.observation_space = spaces.Box(low=0.0, high=255.0, shape=(width//4, height//4, 3), dtype=np.uint8)
+        self.div = 4
+        self.observation_space = spaces.Box(low=0.0, high=255.0, shape=(width // self.div, height // self.div, 3), dtype=np.uint8)
         if not self.rgb:
-            self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(1, width//4, height//4), dtype=np.uint8)
+            self.observation_space = spaces.Box(low=0.0, high=1.0, shape=(1, width, height), dtype=np.uint8)
             
         self.action_space = spaces.Discrete(2)
+        #self.action_space = spaces.Box(low=0.0, high=2.0, shape=(1,), dtype=np.uint8)
 
         self.flappy = FlappyBird(width, height)
         self.flappy.showWelcomeAnimation()
@@ -50,6 +52,6 @@ class CnnFlapEnv(gym.Env):
     def preprocess_observation(self):
         if not self.rgb:
             self.observation = color.rgb2gray(np.asarray(self.observation))
-        self.observation = resize(self.observation, (self.observation.shape[0] // 4, self.observation.shape[1] // 4), anti_aliasing=True)
+        self.observation = resize(self.observation, (self.observation.shape[0] // self.div, self.observation.shape[1] // self.div), anti_aliasing=True)
         if not self.rgb:
             self.observation = np.expand_dims(self.observation, 0)
