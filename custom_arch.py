@@ -1,11 +1,11 @@
 import torch
 import torch.nn as nn
-import gym
+import gymnasium as gym
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 from stable_baselines3 import PPO
 from stable_baselines3.common.policies import ActorCriticPolicy, ActorCriticCnnPolicy
-from scipy.stats import loguniform
+#from scipy.stats import loguniform
 
 class CustomCNN(BaseFeaturesExtractor):
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 256):
@@ -14,22 +14,23 @@ class CustomCNN(BaseFeaturesExtractor):
         # Re-ordering will be done by pre-preprocessing or wrapper
         n_input_channels = observation_space.shape[0]
         self.cnn = nn.Sequential(
-            nn.Conv2d(n_input_channels, 32, kernel_size=6, padding=2),
+            nn.Conv2d(n_input_channels, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.MaxPool2d(3, 3),
-            nn.ReLU(),
 
-            nn.Conv2d(32, 64, kernel_size=4),#, stride=2),
-            nn.MaxPool2d(2, 2),
+            nn.Conv2d(16, 32, kernel_size=5, stride=2),
             nn.ReLU(),
+            nn.MaxPool2d(3, 3),
 
-            nn.Conv2d(64, 128, kernel_size=4),
-            nn.MaxPool2d(2, 2),
+            nn.Conv2d(32, 64, kernel_size=7),
             nn.ReLU(),
+            nn.MaxPool2d(3, 3),
+            #1x257664
 
             #nn.Conv2d(128, 256, kernel_size=3),
             #nn.MaxPool2d(2, 2),
             #nn.ReLU(),
-            nn.Flatten()
+            nn.Flatten(),
         )
        
 
@@ -42,7 +43,11 @@ class CustomCNN(BaseFeaturesExtractor):
         self.linear = nn.Sequential(nn.Linear(n_flatten, features_dim), nn.ReLU())
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
-        return self.linear(self.cnn(observations))
+        x = self.cnn(observations)
+        print(x.shape)
+        x = self.linear(x)
+        print(x.shape)
+        return x
 
 
 class CustomMlp(BaseFeaturesExtractor):

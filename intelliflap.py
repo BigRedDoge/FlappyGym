@@ -2,12 +2,12 @@ import random
 import statistics
 from collections import defaultdict
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch
 import torch.nn as nn
 from stable_baselines3 import A2C, DDPG, DQN, HER, PPO, SAC, TD3
-from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
+#from stable_baselines3.common.bit_flipping_env import BitFlippingEnv
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from stable_baselines3.ppo import CnnPolicy
@@ -24,14 +24,14 @@ def main():
 
     #env = DummyVecEnv([CnnFlapEnv])
     #check_env(env)
-    env = SubprocVecEnv([CnnFlapEnv for _ in range(16)])
+    env = SubprocVecEnv([CnnFlapEnv for _ in range(1)])
     #envs = [make_env('cnnflap-v0', i)() for i in range(8)]
     env.env_method('render')
     #env.render()
     #model = DQN.load("flappy_dqn1", env)
     policy_kwargs = dict(
         features_extractor_class=CustomCNN,
-        features_extractor_kwargs=dict(features_dim=256),
+        features_extractor_kwargs=dict(features_dim=256)
     )
     #eval_callback = EvalCallback(env[0], best_model_save_path='./saved_models/',
     #                         eval_freq=100000, deterministic=True, render=False)
@@ -45,12 +45,12 @@ def main():
     #model.learn(total_timesteps=1000000)
     #model.save("saved_models/flappy_a2c_custom2_1mil")
 
-    env = DummyVecEnv([CnnFlapEnv])
-    #model = PPO('CnnPolicy', env, verbose=1, policy_kwargs=policy_kwargs, tensorboard_log="./logs/progress_tensorboard/")
-    model = A2C.load("saved_models/flappy_a2c_custom2_1mil", env)
+    #env = DummyVecEnv([CnnFlapEnv])
+    model = PPO("CnnPolicy", env, policy_kwargs=policy_kwargs, verbose=1, tensorboard_log="./logs/progress_tensorboard/")
+    #model = A2C.load("saved_models/flappy_a2c_custom2_1mil", env)
 
     obs = env.reset()
-    env.render()
+    env.render('human')
     rewards = []
     scores = []
     reward = 0

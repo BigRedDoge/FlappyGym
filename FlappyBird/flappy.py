@@ -64,7 +64,7 @@ class FlappyBird(object):
 
         pygame.init()
         self.FPSCLOCK = pygame.time.Clock()
-        self.SCREEN = pygame.display.set_mode((self.SCREENWIDTH, self.SCREENHEIGHT), flags=pygame.HIDDEN)
+        self.SCREEN = pygame.display.set_mode((self.SCREENWIDTH, self.SCREENHEIGHT), flags=pygame.SHOWN)
         pygame.display.set_caption('Flappy Bird')
 
         # numbers sprites for score display
@@ -242,8 +242,8 @@ class FlappyBird(object):
         self.game_state['upperPipes'], self.game_state['lowerPipes'])
 
         if crashTest[0]:
-            penalty = 5 - self.score if self.score < 5 else 1
-            reward -= penalty #abs(-1.0 * math.log((self.score + 1), 1.08) + 30) + 5
+            #penalty = 5 - self.score if self.score < 5 else 1
+            reward = -1 #abs(-1.0 * math.log((self.score + 1), 1.08) + 30) + 5
             #print(reward)
             self.showGameOverScreen()
             info['score'] = self.score
@@ -260,7 +260,8 @@ class FlappyBird(object):
             pipeMidPos = pipe['x'] + self.IMAGES['pipe'][0].get_width() / 2
             if pipeMidPos <= playerMidPos < pipeMidPos + 4:
                 self.score += 1
-                reward += 5 * self.score  #25 * self.game_state['score']
+                #reward += 5 * self.score  #25 * self.game_state['score']
+                reward = 1
                 if self.render and self.sound:
                     self.SOUNDS['point'].play()
 
